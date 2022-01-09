@@ -1,18 +1,21 @@
 package frozenblock.wild.mod.entity;
 
 
+import frozenblock.wild.mod.fromAccurateSculk.ShriekCounter;
 import frozenblock.wild.mod.liukrastapi.WardenGoal;
 import frozenblock.wild.mod.registry.RegisterAccurateSculk;
+import frozenblock.wild.mod.registry.RegisterEntities;
 import frozenblock.wild.mod.registry.RegisterSounds;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.entity.*;
-import net.minecraft.entity.ai.goal.*;
+import net.minecraft.entity.ai.goal.SwimGoal;
+import net.minecraft.entity.ai.goal.WanderAroundGoal;
 import net.minecraft.entity.attribute.DefaultAttributeContainer;
 import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.mob.*;
+import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -21,7 +24,7 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.intprovider.UniformIntProvider;
+import net.minecraft.util.math.Box;
 import net.minecraft.world.LocalDifficulty;
 import net.minecraft.world.ServerWorldAccess;
 import net.minecraft.world.Vibration;
@@ -31,6 +34,7 @@ import net.minecraft.world.event.PositionSource;
 import net.minecraft.world.event.PositionSourceType;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.Optional;
 
 public class WardenEntity extends HostileEntity {
@@ -47,8 +51,13 @@ public class WardenEntity extends HostileEntity {
     public World lasteventworld;
     public LivingEntity lastevententity;
 
+    public BlockPos outPos;
+
+    public boolean isDiggingToLocation=false;
     public boolean hasDetected=false;
     public int emergeTicksLeft;
+    public int timeStuck=0;
+    public BlockPos stuckPos;
     public boolean hasEmerged;
     public long vibrationTimer = 0;
     public long leaveTime;
@@ -76,7 +85,7 @@ public class WardenEntity extends HostileEntity {
     protected void initGoals() {
         this.goalSelector.add(1, new SwimGoal(this));
         this.goalSelector.add(2, new WardenGoal(this, speed));
-        this.goalSelector.add(4, new WanderAroundGoal(this, 0.3));
+        this.goalSelector.add(1, new WanderAroundGoal(this, 0.3));
     }
     @Override
     public void emitGameEvent(GameEvent event, @Nullable Entity entity, BlockPos pos) {}
@@ -95,28 +104,51 @@ public class WardenEntity extends HostileEntity {
         if(this.roarTicksLeft1 > 0) {
             --this.roarTicksLeft1;
         }
-        if(this.emergeTicksLeft > 0 && !this.hasEmerged) {
+        if(this.emergeTicksLeft > 0 && !this.hasEmerged && !this.isDiggingToLocation) {
             digParticles(this.world, this.getBlockPos(), this.emergeTicksLeft);
             this.setInvulnerable(true);
             this.setVelocity(0,0,0);
             this.emergeTicksLeft--;
         }
-        if (this.emergeTicksLeft==0 && !this.hasEmerged) {
+        if (this.emergeTicksLeft==0 && !this.hasEmerged && !this.isDiggingToLocation) {
             this.setInvulnerable(false);
             this.hasEmerged=true;
             this.emergeTicksLeft=-1;
         }
-        if(this.emergeTicksLeft > 0 && this.hasEmerged) {
+        if(this.emergeTicksLeft > 0 && this.hasEmerged && !this.isDiggingToLocation) {
             digParticles(this.world, this.getBlockPos(), this.emergeTicksLeft);
             this.setInvulnerable(true);
             this.setVelocity(0,0,0);
             --this.emergeTicksLeft;
         }
-        if (this.emergeTicksLeft==0 && this.hasEmerged) {
+        if (this.emergeTicksLeft==0 && this.hasEmerged && !this.isDiggingToLocation) {
             this.remove(RemovalReason.DISCARDED);
         }
-        if(world.getTime()==this.leaveTime) {
+        if(!this.isDiggingToLocation && world.getTime()==this.leaveTime) {
             this.handleStatus((byte) 6);
+        }
+        //DIGGING TO NEW LOCATION
+        if(this.stuckPos!=null && this.getBlockPos().getSquaredDistance(this.stuckPos)<2 && this.hasEmerged && this.hasDetected) {
+            this.timeStuck++;
+        } else {
+            this.timeStuck=0;
+            this.stuckPos=this.getBlockPos();
+        }
+        if(this.timeStuck>=200 && !this.isDiggingToLocation && this.hasEmerged) {
+            this.handleStatus((byte) 8);
+        }
+        if(this.emergeTicksLeft>-2 && this.hasEmerged && this.isDiggingToLocation) {
+            this.setInvulnerable(true);
+            this.setVelocity(0,0,0);
+            if (this.emergeTicksLeft!=-2) {
+                digParticles(this.world, this.getBlockPos(), this.emergeTicksLeft);
+            }
+            --this.emergeTicksLeft;
+        }
+        if (this.emergeTicksLeft==-2 && this.hasEmerged && this.isDiggingToLocation) {
+            this.emergeTicksLeft=-20;
+            newWarden(this.world, outPos);
+            this.remove(RemovalReason.DISCARDED);
         }
         super.tickMovement();
     }
@@ -169,13 +201,30 @@ public class WardenEntity extends HostileEntity {
             //Emerging
             this.emergeTicksLeft=120;
             this.hasEmerged=false;
+            this.stuckPos=this.getBlockPos();
             world.playSound(null, this.getBlockPos(), RegisterSounds.ENTITY_WARDEN_EMERGE, SoundCategory.HOSTILE, 1F, 1F);
         } else if(status == 6) {
             //Digging Back
             this.emergeTicksLeft=60;
             this.hasEmerged=true;
             world.playSound(null, this.getBlockPos(), RegisterSounds.ENTITY_WARDEN_DIG, SoundCategory.HOSTILE, 1F, 1F);
-        }  else {
+        } else if(status == 8) {
+            //Digging To Last Event Location If It's Spawnable And Warden is Stuck
+            Box box = new Box(this.getBlockPos().add(-16,-16,-16), this.getBlockPos().add(16,16,16));
+            List<LivingEntity> entities = world.getNonSpectatingEntities(LivingEntity.class, box);
+                if (entities.size() > 0) {
+                    for (LivingEntity target : entities) {
+                        if (target.isAlive() && target!=this && ShriekCounter.wardenOutLocation(target.getBlockPos(), this.world)!=null) {
+                            this.emergeTicksLeft = 60;
+                            this.isDiggingToLocation = true;
+                            this.hasEmerged = true;
+                            world.playSound(null, this.getBlockPos(), RegisterSounds.ENTITY_WARDEN_DIG, SoundCategory.HOSTILE, 1F, 1F);
+                            this.outPos=ShriekCounter.wardenOutLocation(target.getBlockPos(), this.world);
+                            break;
+                        }
+                    }
+                }
+        } else {
             super.handleStatus(status);
         }
 
@@ -186,7 +235,7 @@ public class WardenEntity extends HostileEntity {
         buf.writeBlockPos(pos);
         buf.writeInt(ticks);
         for (ServerPlayerEntity player : PlayerLookup.around((ServerWorld) world, pos, 32)) {
-            ServerPlayNetworking.send(player, RegisterAccurateSculk.WARDEN_DIG_PARTICLES, buf);
+           ServerPlayNetworking.send(player, RegisterAccurateSculk.WARDEN_DIG_PARTICLES, buf);
         }
     }
 
@@ -197,7 +246,7 @@ public class WardenEntity extends HostileEntity {
     }
 
     public void listen(BlockPos eventPos, World eventWorld, LivingEntity eventEntity) {
-        if(this.lasteventpos == eventPos && this.lasteventworld == eventWorld && this.lastevententity == eventEntity && this.world.getTime()-this.vibrationTimer>=23) {
+        if(this.lasteventpos == eventPos && this.lasteventworld == eventWorld && this.lastevententity == eventEntity && this.world.getTime()-this.vibrationTimer>=23 && this.hasEmerged) {
             this.hasDetected=true;
             this.vibrationTimer=this.world.getTime();
             this.leaveTime=this.world.getTime()+1200;
@@ -218,6 +267,24 @@ public class WardenEntity extends HostileEntity {
         this.lasteventpos = eventPos;
         this.lasteventworld = eventWorld;
         this.lastevententity = eventEntity;
+    }
+    public void newWarden(World world, BlockPos currentCheck) {
+        if (currentCheck!=null) {
+            WardenEntity warden = (WardenEntity) RegisterEntities.WARDEN.create(world);
+            warden.refreshPositionAndAngles((double) currentCheck.getX() + 1D, (double) currentCheck.up(1).getY(), (double) currentCheck.getZ() + 1D, 0.0F, 0.0F);
+            world.spawnEntity(warden);
+            warden.setHealth(this.getHealth());
+            warden.lasteventpos = this.lasteventpos;
+            if (this.lastevententity != null) {
+                warden.lastevententity = this.lastevententity;
+            }
+            if (this.lasteventworld != null) {
+                warden.lasteventworld = this.lasteventworld;
+            }
+            warden.handleStatus((byte) 5);
+            warden.leaveTime = world.getTime() + 1200;
+            world.playSound(null, currentCheck, RegisterSounds.ENTITY_WARDEN_EMERGE, SoundCategory.HOSTILE, 1F, 1F);
+        }
     }
 
     public void writeCustomDataToNbt(NbtCompound nbt) {
