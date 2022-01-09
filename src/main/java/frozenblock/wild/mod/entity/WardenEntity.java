@@ -35,6 +35,9 @@ import net.minecraft.world.event.PositionSourceType;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.Optional;
 
 public class WardenEntity extends HostileEntity {
@@ -50,6 +53,8 @@ public class WardenEntity extends HostileEntity {
     public BlockPos lasteventpos;
     public World lasteventworld;
     public LivingEntity lastevententity;
+    public ArrayList<UUID> entityList = new ArrayList<UUID>();
+    public ArrayList<Integer> susList = new ArrayList<Integer>();
 
     public BlockPos outPos;
 
@@ -262,11 +267,40 @@ public class WardenEntity extends HostileEntity {
                 }
             };
                 CreateVibration(this.world, lasteventpos, wardenPositionSource, WardenHead);
+            if (eventEntity!=null) {
+                addSuspicion(eventEntity);
+            }
             }
         this.lasteventpos = eventPos;
         this.lasteventworld = eventWorld;
         this.lastevententity = eventEntity;
     }
+    
+        public void addSuspicion(LivingEntity entity) {
+        if (!this.entityList.isEmpty()) {
+            if (this.entityList.contains(entity.getUuid())) {
+                int slot = this.entityList.indexOf(entity.getUuid());
+                this.susList.set(slot, this.susList.get(slot) + 1);
+            } else {
+                this.entityList.add(entity.getUuid());
+                this.susList.add(1);
+            }
+        } else {
+            this.entityList.add(entity.getUuid());
+            this.susList.add(1);
+        }
+    }
+
+    public int getSuspicion(UUID id) {
+        if (!this.entityList.isEmpty()) {
+            if (this.entityList.contains(id)) {
+                int slot = this.entityList.indexOf(id);
+                return this.susList.get(slot);
+            }
+        }
+        return 0;
+    }
+    
     public void newWarden(World world, BlockPos currentCheck) {
         if (currentCheck!=null) {
             WardenEntity warden = (WardenEntity) RegisterEntities.WARDEN.create(world);
