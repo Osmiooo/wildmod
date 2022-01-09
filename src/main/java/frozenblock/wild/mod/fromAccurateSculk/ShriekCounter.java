@@ -112,7 +112,7 @@ public class ShriekCounter {
         return !SculkTags.WARDEN_SPAWNABLE.contains(world.getBlockState(p).getBlock()) && !world.getBlockState(p).isAir() && world.getBlockState(p).getBlock()!=Blocks.WATER &&  world.getBlockState(p).getBlock()!=Blocks.LAVA;
     }
     public static boolean wardenNonCollide(BlockPos p, World world) {
-        if (SculkTags.WARDEN_NON_COLLIDE.contains(world.getBlockState(p.up()).getBlock()) && SculkTags.WARDEN_NON_COLLIDE.contains(world.getBlockState(p.up(2)).getBlock()) && SculkTags.WARDEN_NON_COLLIDE.contains(world.getBlockState(p.up(3)).getBlock()) && SculkTags.WARDEN_NON_COLLIDE.contains(world.getBlockState(p.up(4)).getBlock())) {
+        if (SculkTags.WARDEN_NON_COLLIDE.contains(world.getBlockState(p.up()).getBlock()) && SculkTags.WARDEN_NON_COLLIDE.contains(world.getBlockState(p.up(2)).getBlock()) && SculkTags.WARDEN_NON_COLLIDE.contains(world.getBlockState(p.up(3)).getBlock())) {
             return true;
         }
         return false;
@@ -143,5 +143,16 @@ public class ShriekCounter {
             world.playSound(null, play, RegisterSounds.ENTITY_WARDEN_CLOSEST, SoundCategory.NEUTRAL, 0.4F, 1F);
         }
     }
+
+    public static BlockPos wardenOutLocation(BlockPos pos, World world) {
+                for (int t = 1; t < 8; t++) {
+                    ArrayList<BlockPos> candidates = findBlock(pos.add(-1, 0, -1), t, true, world);
+                    if (!candidates.isEmpty()) {
+                            int ran = UniformIntProvider.create(0, candidates.size() - 1).get(world.getRandom());
+                            return candidates.get(ran);
+                    }
+                }
+        return null;
+        }
 
 }
