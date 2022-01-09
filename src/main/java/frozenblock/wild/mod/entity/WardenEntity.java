@@ -133,7 +133,7 @@ public class WardenEntity extends HostileEntity {
             this.timeStuck=0;
             this.stuckPos=this.getBlockPos();
         }
-        if(this.timeStuck>=200 && !this.isDiggingToLocation && this.hasEmerged) {
+        if(this.timeStuck>=200 && !this.isDiggingToLocation && this.hasEmerged && world.getTime()-this.vibrationTimer<200) {
             this.handleStatus((byte) 8);
         }
         if(this.emergeTicksLeft>-2 && this.hasEmerged && this.isDiggingToLocation) {
