@@ -10,12 +10,11 @@ import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.entity.*;
-import net.minecraft.entity.ai.goal.SwimGoal;
-import net.minecraft.entity.ai.goal.WanderAroundGoal;
+import net.minecraft.entity.ai.goal.*;
 import net.minecraft.entity.attribute.DefaultAttributeContainer;
 import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.mob.HostileEntity;
+import net.minecraft.entity.mob.*;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -34,11 +33,10 @@ import net.minecraft.world.event.PositionSource;
 import net.minecraft.world.event.PositionSourceType;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.Optional;
 
 public class WardenEntity extends HostileEntity {
 
@@ -56,18 +54,18 @@ public class WardenEntity extends HostileEntity {
     public ArrayList<UUID> entityList = new ArrayList<UUID>();
     public ArrayList<Integer> susList = new ArrayList<Integer>();
 
-    public BlockPos outPos;
-
-    public boolean isDiggingToLocation=false;
     public boolean hasDetected=false;
     public int emergeTicksLeft;
-    public int timeStuck=0;
-    public BlockPos stuckPos;
     public boolean hasEmerged;
     public long vibrationTimer = 0;
     public long leaveTime;
     protected int delay = 0;
     protected int distance;
+
+    public int timeStuck=0;
+    public BlockPos stuckPos;
+    public BlockPos outPos;
+    public boolean isDiggingToLocation=false;
 
 
     public WardenEntity(EntityType<? extends HostileEntity> entityType, World world) {
@@ -90,6 +88,7 @@ public class WardenEntity extends HostileEntity {
     protected void initGoals() {
         this.goalSelector.add(1, new SwimGoal(this));
         this.goalSelector.add(2, new WardenGoal(this, speed));
+        this.goalSelector.add(4, new WanderAroundGoal(this, 0.3));
     }
     @Override
     public void emitGameEvent(GameEvent event, @Nullable Entity entity, BlockPos pos) {}
@@ -198,40 +197,39 @@ public class WardenEntity extends HostileEntity {
     public void handleStatus(byte status) {
         if (status == 4) {
             this.attackTicksLeft1 = 10;
-            world.playSound(null, this.getBlockPos(), RegisterSounds.ENTITY_WARDEN_AMBIENT, SoundCategory.HOSTILE, 1.0F,1.0F);
-        } else if(status == 3) {
+            world.playSound(null, this.getBlockPos(), RegisterSounds.ENTITY_WARDEN_AMBIENT, SoundCategory.HOSTILE, 1.0F, 1.0F);
+        } else if (status == 3) {
             this.roarTicksLeft1 = 10;
-        } else if(status == 5) {
+        } else if (status == 5) {
             //Emerging
-            this.emergeTicksLeft=120;
-            this.hasEmerged=false;
-            this.stuckPos=this.getBlockPos();
+            this.emergeTicksLeft = 120;
+            this.hasEmerged = false;
+            this.stuckPos = this.getBlockPos();
             world.playSound(null, this.getBlockPos(), RegisterSounds.ENTITY_WARDEN_EMERGE, SoundCategory.HOSTILE, 1F, 1F);
-        } else if(status == 6) {
+        } else if (status == 6) {
             //Digging Back
-            this.emergeTicksLeft=60;
-            this.hasEmerged=true;
+            this.emergeTicksLeft = 60;
+            this.hasEmerged = true;
             world.playSound(null, this.getBlockPos(), RegisterSounds.ENTITY_WARDEN_DIG, SoundCategory.HOSTILE, 1F, 1F);
-        } else if(status == 8) {
+        } else if (status == 8) {
             //Digging To Last Event Location If It's Spawnable And Warden is Stuck
-            Box box = new Box(this.getBlockPos().add(-16,-16,-16), this.getBlockPos().add(16,16,16));
+            Box box = new Box(this.getBlockPos().add(-16, -16, -16), this.getBlockPos().add(16, 16, 16));
             List<LivingEntity> entities = world.getNonSpectatingEntities(LivingEntity.class, box);
-                if (entities.size() > 0) {
-                    for (LivingEntity target : entities) {
-                        if (target.isAlive() && target!=this && ShriekCounter.wardenOutLocation(target.getBlockPos(), this.world)!=null) {
-                            this.emergeTicksLeft = 60;
-                            this.isDiggingToLocation = true;
-                            this.hasEmerged = true;
-                            world.playSound(null, this.getBlockPos(), RegisterSounds.ENTITY_WARDEN_DIG, SoundCategory.HOSTILE, 1F, 1F);
-                            this.outPos=ShriekCounter.wardenOutLocation(target.getBlockPos(), this.world);
-                            break;
-                        }
+            if (entities.size() > 0) {
+                for (LivingEntity target : entities) {
+                    if (target.isAlive() && target != this && ShriekCounter.wardenOutLocation(target.getBlockPos(), this.world) != null) {
+                        this.emergeTicksLeft = 60;
+                        this.isDiggingToLocation = true;
+                        this.hasEmerged = true;
+                        world.playSound(null, this.getBlockPos(), RegisterSounds.ENTITY_WARDEN_DIG, SoundCategory.HOSTILE, 1F, 1F);
+                        this.outPos = ShriekCounter.wardenOutLocation(target.getBlockPos(), this.world);
+                        break;
                     }
                 }
+            }
         } else {
             super.handleStatus(status);
         }
-
     }
 
     public void digParticles(World world, BlockPos pos, int ticks) {
@@ -239,18 +237,18 @@ public class WardenEntity extends HostileEntity {
         buf.writeBlockPos(pos);
         buf.writeInt(ticks);
         for (ServerPlayerEntity player : PlayerLookup.around((ServerWorld) world, pos, 32)) {
-           ServerPlayNetworking.send(player, RegisterAccurateSculk.WARDEN_DIG_PARTICLES, buf);
+            ServerPlayNetworking.send(player, RegisterAccurateSculk.WARDEN_DIG_PARTICLES, buf);
         }
     }
 
     protected SoundEvent getAmbientSound(){return RegisterSounds.ENTITY_WARDEN_AMBIENT;}
-    
+
     protected SoundEvent getHurtSound(DamageSource source) {
         return RegisterSounds.ENTITY_WARDEN_HURT;
     }
 
     public void listen(BlockPos eventPos, World eventWorld, LivingEntity eventEntity) {
-        if(this.lasteventpos == eventPos && this.lasteventworld == eventWorld && this.lastevententity == eventEntity && this.world.getTime()-this.vibrationTimer>=23 && this.hasEmerged) {
+        if(this.lasteventpos == eventPos && this.lasteventworld == eventWorld && this.lastevententity == eventEntity && this.world.getTime()-this.vibrationTimer>=23) {
             this.hasDetected=true;
             this.vibrationTimer=this.world.getTime();
             this.leaveTime=this.world.getTime()+1200;
@@ -266,17 +264,17 @@ public class WardenEntity extends HostileEntity {
                     return null;
                 }
             };
-                CreateVibration(this.world, lasteventpos, wardenPositionSource, WardenHead);
+            CreateVibration(this.world, lasteventpos, wardenPositionSource, WardenHead);
             if (eventEntity!=null) {
                 addSuspicion(eventEntity);
             }
-            }
+        }
         this.lasteventpos = eventPos;
         this.lasteventworld = eventWorld;
         this.lastevententity = eventEntity;
     }
-    
-        public void addSuspicion(LivingEntity entity) {
+
+    public void addSuspicion(LivingEntity entity) {
         if (!this.entityList.isEmpty()) {
             if (this.entityList.contains(entity.getUuid())) {
                 int slot = this.entityList.indexOf(entity.getUuid());
@@ -300,7 +298,7 @@ public class WardenEntity extends HostileEntity {
         }
         return 0;
     }
-    
+
     public void newWarden(World world, BlockPos currentCheck) {
         if (currentCheck!=null) {
             WardenEntity warden = (WardenEntity) RegisterEntities.WARDEN.create(world);
