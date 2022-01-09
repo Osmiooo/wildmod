@@ -85,7 +85,6 @@ public class WardenEntity extends HostileEntity {
     protected void initGoals() {
         this.goalSelector.add(1, new SwimGoal(this));
         this.goalSelector.add(2, new WardenGoal(this, speed));
-        this.goalSelector.add(1, new WanderAroundGoal(this, 0.3));
     }
     @Override
     public void emitGameEvent(GameEvent event, @Nullable Entity entity, BlockPos pos) {}
