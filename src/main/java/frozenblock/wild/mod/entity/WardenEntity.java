@@ -38,8 +38,30 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-public class WardenEntity extends HostileEntity {
+public class WardenEntity extends HostileEntity implements IAnimatable {
+    private AnimationFactory factor = new AnimationFactor(this);
+    public WardenEntity(EntityType<? extends HostileEntity> type, World worldIn)
+    {
+        super(type, worldIn);
+        this.ignoreCameraFrustum = true;
+    }
 
+    private <E extends IAnimatable> PlayState idle(AnimationEvent<E> event)
+    {
+        event.getController().setAnimation(new AnimationBuilder().addAnimation("animation.warden.idle",true));
+        return PlayState.CONTINUE;
+    }
+
+    @Override
+    public void registerControllers(AnimationData data)
+    {
+        data.addAnimationController(new AnimationController(this, "idle", 0, this::idle));
+    }
+    @Override
+    public void AnimationFactory getFactory()
+    {
+        return this.factory
+    }
     private int attackTicksLeft1;
 
     private int roarTicksLeft1;
