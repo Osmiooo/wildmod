@@ -1,7 +1,6 @@
 package frozenblock.wild.mod.entity;
 
 
-import frozenblock.wild.mod.WildMod;
 import frozenblock.wild.mod.liukrastapi.*;
 import frozenblock.wild.mod.registry.RegisterAccurateSculk;
 import frozenblock.wild.mod.registry.RegisterSounds;
@@ -33,13 +32,21 @@ import net.minecraft.world.Vibration;
 import net.minecraft.world.World;
 import net.minecraft.world.event.*;
 import org.jetbrains.annotations.Nullable;
+import software.bernie.geckolib3.core.IAnimatable;
+import software.bernie.geckolib3.core.PlayState;
+import software.bernie.geckolib3.core.builder.AnimationBuilder;
+import software.bernie.geckolib3.core.controller.AnimationController;
+import software.bernie.geckolib3.core.event.predicate.AnimationEvent;
+import software.bernie.geckolib3.core.manager.AnimationData;
+import software.bernie.geckolib3.core.manager.AnimationFactory;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
 public class WardenEntity extends HostileEntity implements IAnimatable {
-    private AnimationFactory factor = new AnimationFactor(this);
+    private AnimationFactory factory = new AnimationFactory(this);
+
     public WardenEntity(EntityType<? extends HostileEntity> type, World worldIn)
     {
         super(type, worldIn);
@@ -57,11 +64,12 @@ public class WardenEntity extends HostileEntity implements IAnimatable {
     {
         data.addAnimationController(new AnimationController(this, "idle", 0, this::idle));
     }
-    @Override
-    public void AnimationFactory getFactory()
+
+    public AnimationFactory getFactory()
     {
-        return this.factory
+        return this.factory;
     }
+
     private int attackTicksLeft1;
 
     private int roarTicksLeft1;
