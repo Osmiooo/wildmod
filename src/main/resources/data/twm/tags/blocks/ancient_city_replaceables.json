@@ -1,0 +1,7 @@
+{
+  "replace": false,
+  "values": [
+    "#twm:deepslate_blocks",
+    "minecraft:gray_wool"
+  ]
+}

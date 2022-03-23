@@ -1,14 +1,19 @@
 package frozenblock.wild.mod;
 
 import frozenblock.wild.mod.registry.*;
+import frozenblock.wild.mod.worldgen.ReplaceInTagStructureProcessor;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.gamerule.v1.GameRuleFactory;
 import net.fabricmc.fabric.api.gamerule.v1.GameRuleRegistry;
+import net.minecraft.structure.processor.StructureProcessorType;
+import net.minecraft.util.registry.Registry;
 import net.minecraft.world.GameRules;
 
 public class WildMod implements ModInitializer {
 
     public static final String MOD_ID = "twm";
+
+    public static final StructureProcessorType<ReplaceInTagStructureProcessor> REPLACE_IN_TAG = StructureProcessorType.register("replace_in_tag", ReplaceInTagStructureProcessor.CODEC);
 
     @Override
     public void onInitialize() {
