@@ -7,6 +7,7 @@ import net.frozenblock.wildmod.WildMod;
 import net.frozenblock.wildmod.entity.FrogEntity;
 import net.frozenblock.wildmod.entity.FrogVariant;
 import net.frozenblock.wildmod.event.PositionSourceType;
+import net.frozenblock.wildmod.world.gen.structure.WildConfiguredStructureFeature;
 import net.minecraft.Bootstrap;
 import net.minecraft.entity.data.TrackedDataHandler;
 import net.minecraft.network.PacketByteBuf;
@@ -16,6 +17,7 @@ import net.minecraft.util.collection.IndexedIterable;
 import net.minecraft.util.dynamic.Codecs;
 import net.minecraft.util.math.noise.DoublePerlinNoiseSampler;
 import net.minecraft.util.registry.BuiltinRegistries;
+import net.minecraft.world.gen.feature.ConfiguredStructureFeature;
 import org.apache.commons.lang3.Validate;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -47,6 +49,9 @@ public abstract class Registry<T> implements Keyable, IndexedIterable<T> {
     //public static final Registry<StructureType<?>> STRUCTURE_TYPE = create(STRUCTURE_TYPE_KEY, registry -> net.frozenblock.wildmod.world.gen.structure.StructureType.JIGSAW);
 
     //public static final RegistryKey<Registry<StructureType<?>>> STRUCTURE_KEY = createRegistryKey("worldgen/structure");
+    public static final RegistryKey<Registry<WildConfiguredStructureFeature<?, ?>>> CONFIGURED_STRUCTURE_FEATURE_KEY = createRegistryKey(
+            "worldgen/configured_structure_feature"
+    );
     public static final RegistryKey<Registry<DoublePerlinNoiseSampler.NoiseParameters>> NOISE_KEY = createRegistryKey("worldgen/noise");
 
     protected Registry(RegistryKey<? extends Registry<T>> key, Lifecycle lifecycle) {

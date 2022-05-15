@@ -1,6 +1,6 @@
 package net.frozenblock.wildmod.mixins;
 
-import net.frozenblock.wildmod.world.gen.structure.ancientcity.AncientCityGenerator;
+import net.frozenblock.wildmod.world.gen.structure.ancientcity.AncientCityData;
 import net.minecraft.structure.pool.StructurePool;
 import net.minecraft.structure.pool.StructurePools;
 import net.minecraft.util.registry.RegistryEntry;
@@ -18,9 +18,9 @@ public class StructurePoolsMixin {
     @Final
     private static RegistryEntry<StructurePool> INVALID;
 
-    @Inject(method = "initDefaultPools", at = @At("HEAD"))
+    @Inject(method = "initDefaultPools", at = @At("RETURN"))
     private static RegistryEntry<StructurePool> initDefaultPools(CallbackInfoReturnable<RegistryEntry<StructurePool>> cir) {
-        //AncientCityGenerator.init();
+        AncientCityData.init();
         return INVALID;
     }
 }

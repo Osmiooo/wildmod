@@ -22,6 +22,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.collection.Int2ObjectBiMap;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.GameRules;
+import net.minecraft.world.gen.StructureWeightType;
 
 import java.util.OptionalInt;
 
@@ -34,6 +35,8 @@ public class WildMod implements ModInitializer {
     public static final EntityPose SNIFFING = ClassTinkerers.getEnum(EntityPose.class, "SNIFFING");
     public static final EntityPose EMERGING = ClassTinkerers.getEnum(EntityPose.class, "EMERGING");
     public static final EntityPose DIGGING = ClassTinkerers.getEnum(EntityPose.class, "DIGGING");
+
+    public static final StructureWeightType BEARD_AND_SHAVE = ClassTinkerers.getEnum(StructureWeightType.class, "BEARD_AND_SHAVE");
 
     public static final ItemCriterion ALLAY_DROP_ITEM_ON_BLOCK = new ItemCriterion(new Identifier(WildMod.MOD_ID, "allay_drop_item_on_block"));
 
